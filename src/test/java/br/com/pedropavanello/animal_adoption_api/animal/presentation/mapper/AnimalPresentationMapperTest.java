@@ -1,11 +1,13 @@
 package br.com.pedropavanello.animal_adoption_api.animal.presentation.mapper;
 
 import br.com.pedropavanello.animal_adoption_api.animal.application.command.CreateAnimalCommand;
+import br.com.pedropavanello.animal_adoption_api.animal.application.command.UpdateAdoptionStatusCommand;
 import br.com.pedropavanello.animal_adoption_api.animal.application.command.UpdateAnimalCommand;
 import br.com.pedropavanello.animal_adoption_api.animal.domain.model.AdoptionStatus;
 import br.com.pedropavanello.animal_adoption_api.animal.domain.model.Animal;
 import br.com.pedropavanello.animal_adoption_api.animal.presentation.dto.AnimalResponse;
 import br.com.pedropavanello.animal_adoption_api.animal.presentation.dto.CreateAnimalRequest;
+import br.com.pedropavanello.animal_adoption_api.animal.presentation.dto.UpdateAdoptionStatusRequest;
 import br.com.pedropavanello.animal_adoption_api.animal.presentation.dto.UpdateAnimalRequest;
 import org.junit.jupiter.api.Test;
 
@@ -74,5 +76,18 @@ class AnimalPresentationMapperTest {
                 () -> assertEquals(animal.getAge(), response.age()),
                 () -> assertEquals(AdoptionStatus.AVAILABLE, response.status())
         );
+    }
+
+    @Test
+    void shouldMapUpdateAdoptionStatusRequestToCommand() {
+        UpdateAdoptionStatusRequest request =
+                new UpdateAdoptionStatusRequest(
+                        AdoptionStatus.ADOPTED
+                );
+
+        UpdateAdoptionStatusCommand command =
+                mapper.toUpdateAdoptionStatusCommand(request);
+
+        assertEquals(request.status(), command.status());
     }
 }

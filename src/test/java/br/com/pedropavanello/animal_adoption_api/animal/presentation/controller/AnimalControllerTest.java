@@ -1,12 +1,15 @@
 package br.com.pedropavanello.animal_adoption_api.animal.presentation.controller;
 
 import br.com.pedropavanello.animal_adoption_api.animal.application.command.CreateAnimalCommand;
+import br.com.pedropavanello.animal_adoption_api.animal.application.command.UpdateAdoptionStatusCommand;
 import br.com.pedropavanello.animal_adoption_api.animal.application.command.UpdateAnimalCommand;
 import br.com.pedropavanello.animal_adoption_api.animal.application.exception.AnimalNotFoundException;
 import br.com.pedropavanello.animal_adoption_api.animal.application.service.AnimalService;
+import br.com.pedropavanello.animal_adoption_api.animal.domain.model.AdoptionStatus;
 import br.com.pedropavanello.animal_adoption_api.animal.domain.model.Animal;
 import br.com.pedropavanello.animal_adoption_api.animal.domain.model.AnimalId;
 import br.com.pedropavanello.animal_adoption_api.animal.presentation.mapper.AnimalPresentationMapper;
+import br.com.pedropavanello.animal_adoption_api.animal.application.command.UpdateAdoptionStatusCommand;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -32,6 +35,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 
 @WebMvcTest(AnimalController.class)
 @Import(AnimalPresentationMapper.class)
@@ -211,6 +215,155 @@ class AnimalControllerTest {
                 .andExpect(jsonPath("$.age").value(4));
 
         verify(animalService).update(animalId, command);
+    }
+
+    @Test
+    void shouldUpdateAdoptionStatusToAdopted() throws Exception {
+        Animal animal = Animal.create(
+                "Luna",
+                "Cachorro",
+                "Vira-lata",
+                3
+        );
+        animal.markAsAdopted();
+
+        AnimalId animalId = animal.getId();
+        UpdateAdoptionStatusCommand command =
+                new UpdateAdoptionStatusCommand(
+                        AdoptionStatus.ADOPTED
+                );
+
+        when(animalService.updateAdoptionStatus(animalId, command))
+                .thenReturn(animal);
+
+        mockMvc.perform(
+                        patch(
+                                "/api/v1/animals/{id}/adoption-status",
+                                animalId.value()
+                        )
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                          "status": "ADOPTED"
+                                        }
+                                        """)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(
+                        animalId.value().toString()
+                ))
+                .andExpect(jsonPath("$.status").value("ADOPTED"));
+
+        verify(animalService)
+                .updateAdoptionStatus(animalId, command);
+    }
+
+    @Test
+    void shouldRevertAdoptionStatusToAvailable() throws Exception {
+        Animal animal = Animal.create(
+                "Luna",
+                "Cachorro",
+                "Vira-lata",
+                3
+        );
+        animal.markAsAdopted();
+        animal.markAsAvailable();
+
+        AnimalId animalId = animal.getId();
+        UpdateAdoptionStatusCommand command =
+                new UpdateAdoptionStatusCommand(
+                        AdoptionStatus.AVAILABLE
+                );
+
+        when(animalService.updateAdoptionStatus(animalId, command))
+                .thenReturn(animal);
+
+        mockMvc.perform(
+                        patch(
+                                "/api/v1/animals/{id}/adoption-status",
+                                animalId.value()
+                        )
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                          "status": "AVAILABLE"
+                                        }
+                                        """)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(
+                        animalId.value().toString()
+                ))
+                .andExpect(jsonPath("$.status").value("AVAILABLE"));
+
+        verify(animalService)
+                .updateAdoptionStatus(animalId, command);
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenAdoptionStatusIsMissing()
+            throws Exception {
+        UUID id = UUID.randomUUID();
+
+        mockMvc.perform(
+                        patch(
+                                "/api/v1/animals/{id}/adoption-status",
+                                id
+                        )
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                        }
+                                        """)
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value(
+                        "Um ou mais campos estão inválidos"
+                ))
+                .andExpect(jsonPath("$.fieldErrors.status").value(
+                        "O status de adoção é obrigatório"
+                ));
+
+        verify(
+                animalService,
+                never()
+        ).updateAdoptionStatus(
+                any(AnimalId.class),
+                any(UpdateAdoptionStatusCommand.class)
+        );
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenAdoptionStatusIsInvalid()
+            throws Exception {
+        UUID id = UUID.randomUUID();
+
+        mockMvc.perform(
+                        patch(
+                                "/api/v1/animals/{id}/adoption-status",
+                                id
+                        )
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                        {
+                                          "status": "UNKNOWN"
+                                        }
+                                        """)
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value(
+                        "O corpo da requisição está inválido ou malformado"
+                ));
+
+        verify(
+                animalService,
+                never()
+        ).updateAdoptionStatus(
+                any(AnimalId.class),
+                any(UpdateAdoptionStatusCommand.class)
+        );
     }
 
     @Test
