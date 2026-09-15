@@ -1,6 +1,7 @@
 package br.com.pedropavanello.animal_adoption_api.animal.application.service;
 
 import br.com.pedropavanello.animal_adoption_api.animal.application.command.CreateAnimalCommand;
+import br.com.pedropavanello.animal_adoption_api.animal.application.command.UpdateAdoptionStatusCommand;
 import br.com.pedropavanello.animal_adoption_api.animal.application.command.UpdateAnimalCommand;
 import br.com.pedropavanello.animal_adoption_api.animal.application.exception.AnimalNotFoundException;
 import br.com.pedropavanello.animal_adoption_api.animal.domain.model.Animal;
@@ -69,6 +70,23 @@ public class AnimalService {
     }
 
     @Transactional
+    public Animal updateAdoptionStatus(
+            AnimalId id,
+            UpdateAdoptionStatusCommand command
+    ) {
+        requireUpdateAdoptionStatusCommand(command);
+
+        Animal animal = findById(id);
+
+        switch (command.status()) {
+            case AVAILABLE -> animal.markAsAvailable();
+            case ADOPTED -> animal.markAsAdopted();
+        }
+
+        return animalRepository.save(animal);
+    }
+
+    @Transactional
     public void delete(AnimalId id) {
         Animal animal = findById(id);
 
@@ -95,6 +113,22 @@ public class AnimalService {
         if (command == null) {
             throw new IllegalArgumentException(
                     "O comando de atualização não pode ser nulo"
+            );
+        }
+    }
+
+    private static void requireUpdateAdoptionStatusCommand(
+            UpdateAdoptionStatusCommand command
+    ) {
+        if (command == null) {
+            throw new IllegalArgumentException(
+                    "O comando de atualização do status de adoção não pode ser nulo"
+            );
+        }
+
+        if (command.status() == null) {
+            throw new IllegalArgumentException(
+                    "O status de adoção não pode ser nulo"
             );
         }
     }

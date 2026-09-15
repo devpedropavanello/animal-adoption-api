@@ -79,6 +79,10 @@ public final class Animal {
         this.status = AdoptionStatus.ADOPTED;
     }
 
+    public void markAsAvailable() {
+        this.status = AdoptionStatus.AVAILABLE;
+    }
+
     private static AnimalId requireId(AnimalId id) {
         if (id == null) {
             throw new IllegalArgumentException(

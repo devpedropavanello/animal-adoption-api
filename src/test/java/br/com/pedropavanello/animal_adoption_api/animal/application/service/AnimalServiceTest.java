@@ -1,6 +1,7 @@
 package br.com.pedropavanello.animal_adoption_api.animal.application.service;
 
 import br.com.pedropavanello.animal_adoption_api.animal.application.command.CreateAnimalCommand;
+import br.com.pedropavanello.animal_adoption_api.animal.application.command.UpdateAdoptionStatusCommand;
 import br.com.pedropavanello.animal_adoption_api.animal.application.command.UpdateAnimalCommand;
 import br.com.pedropavanello.animal_adoption_api.animal.application.exception.AnimalNotFoundException;
 import br.com.pedropavanello.animal_adoption_api.animal.domain.model.AdoptionStatus;
@@ -197,6 +198,125 @@ class AnimalServiceTest {
 
         verify(animalRepository, never()).save(any(Animal.class));
     }
+
+    @Test
+void shouldUpdateStatusToAdoptedAndSaveAnimal() {
+    Animal animal = createStoredAnimal();
+    AnimalId id = animal.getId();
+    UpdateAdoptionStatusCommand command =
+            new UpdateAdoptionStatusCommand(
+                    AdoptionStatus.ADOPTED
+            );
+
+    when(animalRepository.findById(id))
+            .thenReturn(Optional.of(animal));
+    when(animalRepository.save(animal))
+            .thenReturn(animal);
+
+    Animal result = animalService.updateAdoptionStatus(
+            id,
+            command
+    );
+
+    assertAll(
+            () -> assertSame(animal, result),
+            () -> assertEquals(
+                    AdoptionStatus.ADOPTED,
+                    result.getStatus()
+            )
+    );
+
+    verify(animalRepository).findById(id);
+    verify(animalRepository).save(animal);
+}
+
+@Test
+void shouldRevertStatusToAvailableAndSaveAnimal() {
+    Animal animal = createStoredAnimal();
+    animal.markAsAdopted();
+
+    AnimalId id = animal.getId();
+    UpdateAdoptionStatusCommand command =
+            new UpdateAdoptionStatusCommand(
+                    AdoptionStatus.AVAILABLE
+            );
+
+    when(animalRepository.findById(id))
+            .thenReturn(Optional.of(animal));
+    when(animalRepository.save(animal))
+            .thenReturn(animal);
+
+    Animal result = animalService.updateAdoptionStatus(
+            id,
+            command
+    );
+
+    assertAll(
+            () -> assertSame(animal, result),
+            () -> assertEquals(
+                    AdoptionStatus.AVAILABLE,
+                    result.getStatus()
+            )
+    );
+
+    verify(animalRepository).findById(id);
+    verify(animalRepository).save(animal);
+}
+
+@Test
+void shouldNotUpdateStatusWhenAnimalDoesNotExist() {
+    AnimalId id = new AnimalId(UUID.randomUUID());
+    UpdateAdoptionStatusCommand command =
+            new UpdateAdoptionStatusCommand(
+                    AdoptionStatus.ADOPTED
+            );
+
+    when(animalRepository.findById(id))
+            .thenReturn(Optional.empty());
+
+    assertThrows(
+            AnimalNotFoundException.class,
+            () -> animalService.updateAdoptionStatus(
+                    id,
+                    command
+            )
+    );
+
+    verify(animalRepository, never())
+            .save(any(Animal.class));
+}
+
+@Test
+void shouldRejectNullAdoptionStatusCommand() {
+    AnimalId id = new AnimalId(UUID.randomUUID());
+
+    assertThrows(
+            IllegalArgumentException.class,
+            () -> animalService.updateAdoptionStatus(
+                    id,
+                    null
+            )
+    );
+
+    verifyNoInteractions(animalRepository);
+}
+
+@Test
+void shouldRejectNullAdoptionStatus() {
+    AnimalId id = new AnimalId(UUID.randomUUID());
+    UpdateAdoptionStatusCommand command =
+            new UpdateAdoptionStatusCommand(null);
+
+    assertThrows(
+            IllegalArgumentException.class,
+            () -> animalService.updateAdoptionStatus(
+                    id,
+                    command
+            )
+    );
+
+    verifyNoInteractions(animalRepository);
+}
 
     @Test
     void shouldDeleteExistingAnimal() {
