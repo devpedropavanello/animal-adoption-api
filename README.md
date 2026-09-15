@@ -2,7 +2,7 @@
 
 API REST para cadastro e gerenciamento de animais disponíveis para adoção, desenvolvida como projeto prático com Java, Spring Boot, DDD e boas práticas de programação.
 
-> **Status:** em desenvolvimento. A estrutura do Spring Boot, o ambiente PostgreSQL local e o modelo de domínio já foram implementados e validados; os casos de uso, a persistência e os endpoints ainda serão implementados.
+> **Status:** em desenvolvimento. A estrutura do Spring Boot, o ambiente PostgreSQL local, o modelo de domínio e os casos de uso já foram implementados e validados; a persistência e os endpoints ainda serão implementados.
 
 ## Objetivo
 
@@ -112,6 +112,11 @@ src/main/java/br/com/pedropavanello/animal_adoption_api/
     │   └── repository/
     │       └── AnimalRepository.java
     ├── application/
+    │   ├── command/
+    │   │   ├── CreateAnimalCommand.java
+    │   │   └── UpdateAnimalCommand.java
+    │   ├── exception/
+    │   │   └── AnimalNotFoundException.java
     │   └── service/
     │       └── AnimalService.java
     ├── infrastructure/
@@ -131,7 +136,23 @@ src/main/java/br/com/pedropavanello/animal_adoption_api/
             └── ApiExceptionHandler.java
 ```
 
-A camada de domínio dessa estrutura já foi implementada. As demais camadas serão adicionadas gradualmente e poderão receber pequenos ajustes justificados durante a implementação.
+As camadas de domínio e aplicação dessa estrutura já foram implementadas. As demais camadas serão adicionadas gradualmente e poderão receber pequenos ajustes justificados durante a implementação.
+
+## Casos de uso implementados
+
+O `AnimalService` coordena os casos de uso e depende somente do contrato de domínio `AnimalRepository`.
+
+| Método | Responsabilidade |
+| --- | --- |
+| `create(...)` | Cria um animal e solicita sua persistência |
+| `findById(...)` | Consulta um animal ou lança `AnimalNotFoundException` |
+| `findAll()` | Lista todos os animais |
+| `update(...)` | Localiza, altera e solicita a persistência do animal |
+| `delete(...)` | Localiza e solicita a exclusão do animal |
+
+As entradas de cadastro e atualização são representadas por `CreateAnimalCommand` e `UpdateAnimalCommand`. Esses comandos não dependem dos futuros DTOs HTTP.
+
+O serviço ainda não está registrado como bean do Spring. O registro e os limites transacionais serão adicionados junto ao adapter de persistência, evitando uma dependência obrigatória inexistente durante esta etapa.
 
 ## Contrato REST planejado
 
@@ -247,11 +268,10 @@ O comando acima remove o container e a rede do projeto, mas preserva o volume no
 
 ## Estratégia de testes
 
-Já foram implementados testes unitários para o `AnimalId` e para as regras do agregado `Animal`.
+Já foram implementados testes unitários para o `AnimalId`, para as regras do agregado `Animal` e para os casos de uso do `AnimalService`. Os testes da aplicação utilizam Mockito para isolar o contrato `AnimalRepository`.
 
 Permanecem planejados:
 
-- testes unitários do serviço de aplicação com Mockito;
 - testes da camada web com MockMvc;
 - testes dos fluxos de sucesso, validação e recurso inexistente.
 
@@ -293,11 +313,11 @@ test(api): cobre fluxos CRUD de animais
 - [x] configurar a conexão da aplicação com o banco;
 - [x] validar o contexto Spring com o PostgreSQL ativo;
 - [x] modelar o domínio de animais;
-- [ ] implementar os casos de uso;
+- [x] implementar os casos de uso;
 - [ ] implementar o adapter de persistência;
 - [ ] implementar os endpoints REST;
 - [ ] implementar validações e tratamento de erros;
-- [ ] criar os testes automatizados;
+- [ ] concluir os testes automatizados das demais camadas;
 - [ ] validar todos os fluxos da apresentação prática;
 - [ ] atualizar a documentação com os comandos e resultados finais.
 
