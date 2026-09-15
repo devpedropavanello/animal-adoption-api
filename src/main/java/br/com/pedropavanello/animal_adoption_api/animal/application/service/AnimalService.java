@@ -6,10 +6,14 @@ import br.com.pedropavanello.animal_adoption_api.animal.application.exception.An
 import br.com.pedropavanello.animal_adoption_api.animal.domain.model.Animal;
 import br.com.pedropavanello.animal_adoption_api.animal.domain.model.AnimalId;
 import br.com.pedropavanello.animal_adoption_api.animal.domain.repository.AnimalRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-public final class AnimalService {
+@Service
+@Transactional(readOnly = true)
+public class AnimalService {
 
     private final AnimalRepository animalRepository;
 
@@ -23,6 +27,7 @@ public final class AnimalService {
         this.animalRepository = animalRepository;
     }
 
+    @Transactional
     public Animal create(CreateAnimalCommand command) {
         requireCreateCommand(command);
 
@@ -47,6 +52,7 @@ public final class AnimalService {
         return animalRepository.findAll();
     }
 
+    @Transactional
     public Animal update(AnimalId id, UpdateAnimalCommand command) {
         requireUpdateCommand(command);
 
@@ -62,6 +68,7 @@ public final class AnimalService {
         return animalRepository.save(animal);
     }
 
+    @Transactional
     public void delete(AnimalId id) {
         Animal animal = findById(id);
 
