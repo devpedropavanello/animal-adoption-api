@@ -2,7 +2,7 @@
 
 API REST para cadastro e gerenciamento de animais disponíveis para adoção, desenvolvida como projeto prático com Java, Spring Boot, DDD e boas práticas de programação.
 
-> **Status:** em desenvolvimento. A estrutura do Spring Boot e o ambiente PostgreSQL local já foram configurados e validados; o domínio e os endpoints ainda serão implementados.
+> **Status:** em desenvolvimento. A estrutura do Spring Boot, o ambiente PostgreSQL local e o modelo de domínio já foram implementados e validados; os casos de uso, a persistência e os endpoints ainda serão implementados.
 
 ## Objetivo
 
@@ -29,11 +29,11 @@ O escopo foi mantido intencionalmente pequeno para priorizar organização, clar
 - Lombok;
 - JUnit 5, Mockito e MockMvc.
 
-## Modelo de domínio planejado
+## Modelo de domínio
 
-O agregado `Animal` será responsável por manter seus dados e proteger as regras do domínio.
+O agregado `Animal` é responsável por manter seus dados e proteger as regras do domínio.
 
-| Campo | Tipo | Regra planejada |
+| Campo | Tipo | Regra |
 | --- | --- | --- |
 | `id` | `AnimalId` | Gerado pela aplicação a partir de um `UUID` |
 | `name` | `String` | Obrigatório e não vazio |
@@ -42,26 +42,44 @@ O agregado `Animal` será responsável por manter seus dados e proteger as regra
 | `age` | `Integer` | Obrigatório e não negativo |
 | `status` | `AdoptionStatus` | Inicia como `AVAILABLE` |
 
-O identificador será representado no domínio por um Value Object:
+O identificador é representado no domínio por um Value Object implementado como `record`:
 
 ```java
 public record AnimalId(UUID value) {
+
+    public AnimalId {
+        if (value == null) {
+            throw new IllegalArgumentException(
+                    "O identificador do animal não pode ser nulo"
+            );
+        }
+    }
+
+    public static AnimalId generate() {
+        return new AnimalId(UUID.randomUUID());
+    }
 }
 ```
 
 O banco armazenará o valor como `UUID`. A conversão entre `UUID` e `AnimalId` ficará na camada de infraestrutura, evitando dependências do JPA no Value Object de domínio.
 
-### Regras planejadas
+O `AdoptionStatus` possui os estados `AVAILABLE` e `ADOPTED`.
 
-- o identificador será gerado pela aplicação e não será recebido no cadastro;
-- nome e espécie não poderão ser vazios;
-- a idade não poderá ser negativa;
-- um animal novo iniciará com o status `AVAILABLE`;
-- alterações deverão passar pelos comportamentos do domínio, sem setters públicos indiscriminados.
+### Regras implementadas
+
+- o identificador é gerado pela aplicação e não é recebido no cadastro;
+- nome e espécie não podem ser nulos ou vazios;
+- a idade não pode ser nula ou negativa;
+- raça é opcional e valores vazios são normalizados para `null`;
+- um animal novo inicia com o status `AVAILABLE`;
+- a alteração dos dados é atômica e passa por um comportamento do agregado;
+- o domínio não possui setters públicos indiscriminados.
+
+O método `Animal.create(...)` cria novos animais com identificador próprio e status `AVAILABLE`. O método `Animal.restore(...)` permite reconstruir um agregado persistido, enquanto `updateDetails(...)` e `markAsAdopted()` concentram as mudanças de estado.
 
 ## Arquitetura
 
-Será utilizado um DDD pragmático, com separação entre domínio, aplicação, infraestrutura e apresentação.
+O projeto utiliza um DDD pragmático, com separação entre domínio, aplicação, infraestrutura e apresentação.
 
 ```mermaid
 flowchart TD
@@ -83,7 +101,7 @@ flowchart TD
 ### Estrutura planejada
 
 ```text
-src/main/java/br/com/pedropavanello/animaladoption/
+src/main/java/br/com/pedropavanello/animal_adoption_api/
 ├── AnimalAdoptionApiApplication.java
 └── animal/
     ├── domain/
@@ -113,7 +131,7 @@ src/main/java/br/com/pedropavanello/animaladoption/
             └── ApiExceptionHandler.java
 ```
 
-Essa estrutura representa o planejamento inicial e poderá receber pequenos ajustes justificados durante a implementação.
+A camada de domínio dessa estrutura já foi implementada. As demais camadas serão adicionadas gradualmente e poderão receber pequenos ajustes justificados durante a implementação.
 
 ## Contrato REST planejado
 
@@ -229,9 +247,10 @@ O comando acima remove o container e a rede do projeto, mas preserva o volume no
 
 ## Estratégia de testes
 
-Estão planejados:
+Já foram implementados testes unitários para o `AnimalId` e para as regras do agregado `Animal`.
 
-- testes unitários das regras do domínio;
+Permanecem planejados:
+
 - testes unitários do serviço de aplicação com Mockito;
 - testes da camada web com MockMvc;
 - testes dos fluxos de sucesso, validação e recurso inexistente.
@@ -253,16 +272,16 @@ Os testes não serão alterados apenas para ocultar falhas. Cada comportamento t
 ### Exemplos de commits
 
 ```text
-chore: inicia projeto Spring Boot
-docs: documenta escopo e arquitetura do projeto
-chore: configura ambiente local com PostgreSQL
-chore: configura conexão da aplicação com PostgreSQL
-docs: atualiza instruções do ambiente local
-feat(dominio): modela agregado de animal
+chore(projeto): inicia projeto Spring Boot
+docs(projeto): documenta escopo e arquitetura do projeto
+chore(banco): configura ambiente local com PostgreSQL
+chore(configuracao): configura conexão da aplicação com PostgreSQL
+docs(readme): atualiza instruções do ambiente local
+feat(animal): modela agregado de animal
 feat(aplicacao): implementa casos de uso de animais
 feat(persistencia): implementa adaptador do repositório de animais
 feat(api): disponibiliza endpoints CRUD de animais
-test: cobre fluxos CRUD de animais
+test(api): cobre fluxos CRUD de animais
 ```
 
 ## Roadmap
@@ -273,7 +292,7 @@ test: cobre fluxos CRUD de animais
 - [x] configurar PostgreSQL 18 com Docker Compose;
 - [x] configurar a conexão da aplicação com o banco;
 - [x] validar o contexto Spring com o PostgreSQL ativo;
-- [ ] modelar o domínio de animais;
+- [x] modelar o domínio de animais;
 - [ ] implementar os casos de uso;
 - [ ] implementar o adapter de persistência;
 - [ ] implementar os endpoints REST;
