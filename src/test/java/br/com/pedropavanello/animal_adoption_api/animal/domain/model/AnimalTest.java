@@ -211,6 +211,16 @@ class AnimalTest {
         assertEquals(AdoptionStatus.ADOPTED, animal.getStatus());
     }
 
+    @Test
+    void shouldMarkAdoptedAnimalAsAvailable() {
+        Animal animal = createValidAnimal();
+
+        animal.markAsAdopted();
+        animal.markAsAvailable();
+
+        assertEquals(AdoptionStatus.AVAILABLE, animal.getStatus());
+    }
+
     private Animal createValidAnimal() {
         return Animal.create(
                 "Luna",
