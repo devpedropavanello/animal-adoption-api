@@ -2,7 +2,7 @@
 
 API REST para cadastro e gerenciamento de animais disponíveis para adoção, desenvolvida como projeto prático com Java, Spring Boot, DDD e boas práticas de programação.
 
-> **Status:** em desenvolvimento. A estrutura do Spring Boot, o ambiente PostgreSQL local, o modelo de domínio e os casos de uso já foram implementados e validados; a persistência e os endpoints ainda serão implementados.
+> **Status:** em desenvolvimento. A estrutura do Spring Boot, o ambiente PostgreSQL local, o modelo de domínio, os casos de uso e a persistência já foram implementados e validados; os endpoints REST ainda serão implementados.
 
 ## Objetivo
 
@@ -61,7 +61,7 @@ public record AnimalId(UUID value) {
 }
 ```
 
-O banco armazenará o valor como `UUID`. A conversão entre `UUID` e `AnimalId` ficará na camada de infraestrutura, evitando dependências do JPA no Value Object de domínio.
+O banco armazena o valor como `UUID`. A conversão entre `UUID` e `AnimalId` é realizada na camada de infraestrutura, evitando dependências do JPA no Value Object de domínio.
 
 O `AdoptionStatus` possui os estados `AVAILABLE` e `ADOPTED`.
 
@@ -98,7 +98,7 @@ flowchart TD
 - **Infrastructure:** implementa a persistência com Spring Data JPA e PostgreSQL.
 - **Presentation:** recebe requisições HTTP, valida DTOs, chama a aplicação e monta as respostas.
 
-### Estrutura planejada
+### Estrutura atual e planejada
 
 ```text
 src/main/java/br/com/pedropavanello/animal_adoption_api/
@@ -136,7 +136,7 @@ src/main/java/br/com/pedropavanello/animal_adoption_api/
             └── ApiExceptionHandler.java
 ```
 
-As camadas de domínio e aplicação dessa estrutura já foram implementadas. As demais camadas serão adicionadas gradualmente e poderão receber pequenos ajustes justificados durante a implementação.
+As camadas de domínio, aplicação e infraestrutura dessa estrutura já foram implementadas. A camada de apresentação será adicionada na próxima etapa e poderá receber pequenos ajustes justificados durante a implementação.
 
 ## Casos de uso implementados
 
@@ -152,7 +152,7 @@ O `AnimalService` coordena os casos de uso e depende somente do contrato de dom�
 
 As entradas de cadastro e atualização são representadas por `CreateAnimalCommand` e `UpdateAnimalCommand`. Esses comandos não dependem dos futuros DTOs HTTP.
 
-O serviço ainda não está registrado como bean do Spring. O registro e os limites transacionais serão adicionados junto ao adapter de persistência, evitando uma dependência obrigatória inexistente durante esta etapa.
+O `AnimalService` está registrado como bean do Spring. Consultas utilizam transações somente de leitura, enquanto cadastro, atualização e exclusão definem transações de escrita.
 
 ## Contrato REST planejado
 
@@ -199,6 +199,17 @@ Os endpoints descritos acima ainda serão implementados.
 ## Persistência
 
 O PostgreSQL é executado em um container baseado na imagem `postgres:18`, com volume nomeado para persistência dos dados locais. O ambiente está definido no arquivo `compose.yaml`.
+
+A tabela `animals` é mapeada por `AnimalJpaEntity`. O identificador utiliza o tipo `UUID` e é fornecido pelo domínio, sem `@GeneratedValue`. O status é armazenado como texto com `EnumType.STRING`.
+
+A infraestrutura de persistência é composta por:
+
+- `AnimalJpaEntity`: representação da tabela no JPA;
+- `AnimalPersistenceMapper`: conversão entre o agregado e a entidade JPA;
+- `SpringDataAnimalRepository`: acesso ao banco por meio do Spring Data JPA;
+- `AnimalRepositoryAdapter`: implementação do contrato `AnimalRepository` definido no domínio.
+
+O adapter converte objetos do domínio antes de persistir e reconstrói o agregado ao consultar o banco. Dessa forma, as anotações e entidades JPA permanecem restritas à infraestrutura.
 
 O projeto não utilizará uma ferramenta de migrations. Durante o desenvolvimento acadêmico, a criação e a atualização do esquema serão realizadas pelo Hibernate com:
 
@@ -268,7 +279,14 @@ O comando acima remove o container e a rede do projeto, mas preserva o volume no
 
 ## Estratégia de testes
 
-Já foram implementados testes unitários para o `AnimalId`, para as regras do agregado `Animal` e para os casos de uso do `AnimalService`. Os testes da aplicação utilizam Mockito para isolar o contrato `AnimalRepository`.
+Já foram implementados:
+
+- testes unitários do `AnimalId` e das regras do agregado `Animal`;
+- testes unitários do `AnimalService` com Mockito;
+- testes unitários do mapper e do adapter de persistência;
+- testes de integração dos fluxos de cadastro, consulta, listagem, atualização e exclusão com o PostgreSQL real.
+
+Os testes de integração utilizam transações com rollback. O `flush()` força o envio do SQL ao PostgreSQL e o `clear()` evita que as consultas sejam atendidas apenas pelo cache do contexto JPA.
 
 Permanecem planejados:
 
@@ -314,7 +332,7 @@ test(api): cobre fluxos CRUD de animais
 - [x] validar o contexto Spring com o PostgreSQL ativo;
 - [x] modelar o domínio de animais;
 - [x] implementar os casos de uso;
-- [ ] implementar o adapter de persistência;
+- [x] implementar o adapter de persistência;
 - [ ] implementar os endpoints REST;
 - [ ] implementar validações e tratamento de erros;
 - [ ] concluir os testes automatizados das demais camadas;
@@ -323,5 +341,5 @@ test(api): cobre fluxos CRUD de animais
 
 ## Autores
 
-- [Pedro Pavanello](https://github.com/devpedropavanello)
-- [Renan](https://github.com/RenanHyts01)
+- [Pedro Henrique Guimarães Pavanello - 202310824](https://github.com/devpedropavanello)
+- [Renan Augusto S. Silva - 202311388](https://github.com/RenanHyts01)
