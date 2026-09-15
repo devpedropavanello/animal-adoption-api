@@ -2,7 +2,7 @@
 
 API REST para cadastro e gerenciamento de animais disponíveis para adoção, desenvolvida como projeto prático com Java, Spring Boot, DDD e boas práticas de programação.
 
-> **Status:** em desenvolvimento. A estrutura inicial do Spring Boot já foi gerada; o domínio, o banco de dados e os endpoints ainda serão implementados.
+> **Status:** em desenvolvimento. A estrutura do Spring Boot e o ambiente PostgreSQL local já foram configurados e validados; o domínio e os endpoints ainda serão implementados.
 
 ## Objetivo
 
@@ -159,7 +159,7 @@ Os endpoints descritos acima ainda serão implementados.
 
 ## Persistência
 
-O PostgreSQL será executado em um container baseado na imagem `postgres:18`, com volume nomeado para persistência dos dados locais.
+O PostgreSQL é executado em um container baseado na imagem `postgres:18`, com volume nomeado para persistência dos dados locais. O ambiente está definido no arquivo `compose.yaml`.
 
 O projeto não utilizará uma ferramenta de migrations. Durante o desenvolvimento acadêmico, a criação e a atualização do esquema serão realizadas pelo Hibernate com:
 
@@ -169,7 +169,9 @@ spring.jpa.hibernate.ddl-auto=update
 
 Essa configuração simplifica a execução local, mas não é recomendada para ambientes de produção, nos quais mudanças de esquema devem ser versionadas e controladas.
 
-Credenciais e configurações sensíveis não serão versionadas. O projeto disponibilizará um `.env.example`, enquanto o arquivo `.env` permanecerá ignorado pelo Git.
+As configurações locais são disponibilizadas no `.env.example`. O arquivo `.env`, que contém a senha utilizada no ambiente de cada desenvolvedor, permanece ignorado pelo Git.
+
+A aplicação importa o `.env` como arquivo de propriedades e utiliza suas variáveis para criar a conexão JDBC. Nenhuma credencial é mantida no `application.yaml`.
 
 ## Execução local
 
@@ -182,13 +184,48 @@ Credenciais e configurações sensíveis não serão versionadas. O projeto disp
 
 Não é necessário instalar o Maven globalmente, pois o projeto inclui o Maven Wrapper.
 
-Neste momento, apenas a compilação sem execução dos testes pode ser validada, pois o PostgreSQL ainda não foi configurado:
+### Preparar as variáveis locais
 
 ```bash
-./mvnw -DskipTests package
+cp .env.example .env
 ```
 
-Os comandos completos para configurar o ambiente, iniciar o banco e executar a aplicação serão adicionados após a implementação da infraestrutura local.
+Altere o valor de `POSTGRES_PASSWORD` somente no arquivo `.env`. Não versione esse arquivo.
+
+### Iniciar o PostgreSQL
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
+O serviço estará pronto quando seu estado aparecer como `healthy`. A disponibilidade também pode ser verificada com:
+
+```bash
+docker compose exec postgres sh -c 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+```
+
+### Executar os testes
+
+Com o PostgreSQL ativo:
+
+```bash
+./mvnw test
+```
+
+### Executar a aplicação
+
+```bash
+./mvnw spring-boot:run
+```
+
+### Encerrar o ambiente
+
+```bash
+docker compose down
+```
+
+O comando acima remove o container e a rede do projeto, mas preserva o volume nomeado e os dados do PostgreSQL.
 
 ## Estratégia de testes
 
@@ -213,13 +250,29 @@ Os testes não serão alterados apenas para ocultar falhas. Cada comportamento t
 - commits pequenos com uma responsabilidade clara;
 - alterações integradas por Pull Request.
 
+### Exemplos de commits
+
+```text
+chore: inicia projeto Spring Boot
+docs: documenta escopo e arquitetura do projeto
+chore: configura ambiente local com PostgreSQL
+chore: configura conexão da aplicação com PostgreSQL
+docs: atualiza instruções do ambiente local
+feat(dominio): modela agregado de animal
+feat(aplicacao): implementa casos de uso de animais
+feat(persistencia): implementa adaptador do repositório de animais
+feat(api): disponibiliza endpoints CRUD de animais
+test: cobre fluxos CRUD de animais
+```
+
 ## Roadmap
 
 - [x] Gerar a estrutura inicial com Spring Initializr;
 - [x] validar a compilação com Java 25;
 - [x] documentar escopo, arquitetura e contrato planejado;
-- [ ] configurar PostgreSQL 18 com Docker Compose;
-- [ ] configurar a conexão da aplicação com o banco;
+- [x] configurar PostgreSQL 18 com Docker Compose;
+- [x] configurar a conexão da aplicação com o banco;
+- [x] validar o contexto Spring com o PostgreSQL ativo;
 - [ ] modelar o domínio de animais;
 - [ ] implementar os casos de uso;
 - [ ] implementar o adapter de persistência;
@@ -229,6 +282,7 @@ Os testes não serão alterados apenas para ocultar falhas. Cada comportamento t
 - [ ] validar todos os fluxos da apresentação prática;
 - [ ] atualizar a documentação com os comandos e resultados finais.
 
-## Autor
+## Autores
 
-Desenvolvido por Pedro Pavanello e Renan.
+- [Pedro Pavanello](https://github.com/devpedropavanello)
+- [Renan](https://github.com/RenanHyts01)
