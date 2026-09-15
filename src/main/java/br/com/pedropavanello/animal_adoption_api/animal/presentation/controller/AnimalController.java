@@ -5,19 +5,13 @@ import br.com.pedropavanello.animal_adoption_api.animal.domain.model.Animal;
 import br.com.pedropavanello.animal_adoption_api.animal.domain.model.AnimalId;
 import br.com.pedropavanello.animal_adoption_api.animal.presentation.dto.AnimalResponse;
 import br.com.pedropavanello.animal_adoption_api.animal.presentation.dto.CreateAnimalRequest;
+import br.com.pedropavanello.animal_adoption_api.animal.presentation.dto.UpdateAdoptionStatusRequest;
 import br.com.pedropavanello.animal_adoption_api.animal.presentation.dto.UpdateAnimalRequest;
 import br.com.pedropavanello.animal_adoption_api.animal.presentation.mapper.AnimalPresentationMapper;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
@@ -78,6 +72,19 @@ public class AnimalController {
         Animal animal = animalService.update(
                 new AnimalId(id),
                 mapper.toUpdateCommand(request)
+        );
+
+        return ResponseEntity.ok(mapper.toResponse(animal));
+    }
+
+    @PatchMapping("/{id}/adoption-status")
+    public ResponseEntity<AnimalResponse> updateAdoptionStatus(
+            @PathVariable UUID id,
+            @Valid @RequestBody UpdateAdoptionStatusRequest request
+    ) {
+        Animal animal = animalService.updateAdoptionStatus(
+                new AnimalId(id),
+                mapper.toUpdateAdoptionStatusCommand(request)
         );
 
         return ResponseEntity.ok(mapper.toResponse(animal));

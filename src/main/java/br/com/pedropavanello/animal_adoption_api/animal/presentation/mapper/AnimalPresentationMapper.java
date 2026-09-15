@@ -1,5 +1,7 @@
 package br.com.pedropavanello.animal_adoption_api.animal.presentation.mapper;
 
+import br.com.pedropavanello.animal_adoption_api.animal.application.command.UpdateAdoptionStatusCommand;
+import br.com.pedropavanello.animal_adoption_api.animal.presentation.dto.UpdateAdoptionStatusRequest;
 import br.com.pedropavanello.animal_adoption_api.animal.application.command.CreateAnimalCommand;
 import br.com.pedropavanello.animal_adoption_api.animal.application.command.UpdateAnimalCommand;
 import br.com.pedropavanello.animal_adoption_api.animal.domain.model.Animal;
@@ -37,6 +39,14 @@ public class AnimalPresentationMapper {
                 animal.getBreed(),
                 animal.getAge(),
                 animal.getStatus()
+        );
+    }
+
+    public UpdateAdoptionStatusCommand toUpdateAdoptionStatusCommand(
+            UpdateAdoptionStatusRequest request
+    ) {
+        return new UpdateAdoptionStatusCommand(
+                request.status()
         );
     }
 }
