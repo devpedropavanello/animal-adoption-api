@@ -2,7 +2,6 @@
 
 API REST para cadastro e gerenciamento de animais disponíveis para adoção, desenvolvida como projeto prático com Java, Spring Boot, DDD e boas práticas de programação.
 
-> **Status:** concluída para o escopo acadêmico atual. O domínio, os casos de uso, a persistência, os endpoints REST, as validações, o tratamento de erros e os testes automatizados foram implementados e validados.
 
 ## Objetivo
 
